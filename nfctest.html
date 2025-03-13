@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFC 태그 Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    label { display: block; margin: 10px 0 5px; }
+    input, button { margin-bottom: 20px; }
+    #result { color: green; font-weight: bold; }
+    #error { color: red; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>NFC 태그 Test</h1>
+
+  <label for="date">공연 날짜 입력 (YY-MM-DD):</label>
+  <input type="date" id="date" required>
+
+  <label for="round">회차 (0-255):</label>
+  <input type="number" id="round" min="0" max="255" required>
+
+  <label for="zone">구역 (0-255):</label>
+  <input type="number" id="zone" min="0" max="255" required>
+
+  <label for="row">행 (0-255):</label>
+  <input type="number" id="row" min="0" max="255" required>
+
+  <label for="column">열 (0-255):</label>
+  <input type="number" id="column" min="0" max="255" required>
+
+  <button id="write-read">NFC 태그 쓰기 및 읽기</button>
+
+  <div id="result"></div>
+  <div id="error"></div>
+
+  <script>
+    let ndefReader = null;
+
+    const dateInput = document.getElementById('date');
+    const today = new Date();
+    dateInput.value = today.toISOString().split('T')[0];
+
+    document.getElementById('write-read').addEventListener('click', async () => {
+      const date = dateInput.value;
+      const round = parseInt(document.getElementById('round').value, 10);
+      const zone = parseInt(document.getElementById('zone').value, 10);
+      const row = parseInt(document.getElementById('row').value, 10);
+      const column = parseInt(document.getElementById('column').value, 10);
+      const resultDiv = document.getElementById('result');
+      const errorDiv = document.getElementById('error');
+      resultDiv.textContent = '';
+      errorDiv.textContent = '';
+
+      try {
+        if (!date || isNaN(round) || isNaN(zone) || isNaN(row) || isNaN(column)) {
+          throw new Error('모든 입력값을 올바르게 입력해주세요.');
+        }
+
+        const [fullYear, mm, dd] = date.split('-').map(Number);
+        const yy = (fullYear % 100) & 0x7F; // 7비트 YY
+        const mmBits = (mm & 0x0F) << 5; // 4비트 MM
+        const ddBits = dd & 0x1F; // 5비트 DD
+        const dateByte1 = yy; // data[3]: 7비트 YY
+        const dateByte2 = mmBits | ddBits; // data[4]: 4비트 MM + 5비트 DD
+        const id = (round << 24) | (zone << 16) | (row << 8) | column;
+        
+        const data = new Uint8Array(143);
+        data[0] = 0x33;
+        data[1] = 0x2B;
+        data[2] = 0x3C;
+        data[3] = dateByte1;
+        data[4] = dateByte2;
+        data[5] = (id >>> 24) & 0xFF;
+        data[6] = (id >>> 16) & 0xFF;
+        data[7] = (id >>> 8) & 0xFF;
+        data[8] = id & 0xFF;
+
+        ndefReader = new NDEFReader();
+        await ndefReader.write({
+          records: [{ recordType: "unknown", data: data.buffer }],
+        });
+        
+        resultDiv.textContent = 'NFC 태그에 데이터 쓰기 성공!';
+      } catch (err) {
+        errorDiv.textContent = `오류 발생: ${err.message}`;
+      }
+    });
+  </script>
+</body>
+</html>
