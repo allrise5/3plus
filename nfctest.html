@@ -10,6 +10,7 @@
     input, button { margin-bottom: 20px; }
     #result { color: green; font-weight: bold; }
     #error { color: red; font-weight: bold; }
+    #status { color: blue; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -30,8 +31,9 @@
   <label for="column">열 (0-255):</label>
   <input type="number" id="column" min="0" max="255" required>
 
-  <button id="write-read">NFC 태그 쓰기 및 읽기</button>
+  <button id="write-read">NFC 태그 쓰기</button>
 
+  <div id="status"></div>
   <div id="result"></div>
   <div id="error"></div>
 
@@ -43,15 +45,18 @@
     dateInput.value = today.toISOString().split('T')[0];
 
     document.getElementById('write-read').addEventListener('click', async () => {
+      const statusDiv = document.getElementById('status');
+      const resultDiv = document.getElementById('result');
+      const errorDiv = document.getElementById('error');
+      statusDiv.textContent = 'NFC 태그 쓰기 시도 중...';
+      resultDiv.textContent = '';
+      errorDiv.textContent = '';
+
       const date = dateInput.value;
       const round = parseInt(document.getElementById('round').value, 10);
       const zone = parseInt(document.getElementById('zone').value, 10);
       const row = parseInt(document.getElementById('row').value, 10);
       const column = parseInt(document.getElementById('column').value, 10);
-      const resultDiv = document.getElementById('result');
-      const errorDiv = document.getElementById('error');
-      resultDiv.textContent = '';
-      errorDiv.textContent = '';
 
       try {
         if (!date || isNaN(round) || isNaN(zone) || isNaN(row) || isNaN(column)) {
@@ -82,8 +87,10 @@
           records: [{ recordType: "unknown", data: data.buffer }],
         });
         
+        statusDiv.textContent = '';
         resultDiv.textContent = 'NFC 태그에 데이터 쓰기 성공!';
       } catch (err) {
+        statusDiv.textContent = '';
         errorDiv.textContent = `오류 발생: ${err.message}`;
       }
     });
