@@ -55,6 +55,7 @@
                 try {
                     const ndef = new NDEFReader();
                     statusDiv.textContent = 'NFC 태그를 스캔 중입니다...';
+                    statusDiv.style.color = 'blue'; // 기본 상태
                     readNfcBtn.disabled = true;
 
                     await ndef.scan();
@@ -74,6 +75,7 @@
                             <strong>일련 번호:</strong> ${serialNumber || '알 수 없음'}
                         `;
                         statusDiv.textContent = 'NFC 태그 읽기 완료!';
+                        statusDiv.style.color = 'green'; // 완료 메시지 초록색
                         readNfcBtn.disabled = false;
                     });
                 } catch (error) {
